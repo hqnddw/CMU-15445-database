@@ -38,15 +38,15 @@ namespace cmudb {
         delete free_list_;
     }
 
-/*
+/**
  * fetch page_id page
  * This function must mark the Page as pinned and remove its entry from
  * LRUReplacer before it is returned to the caller.
  */
 /**
- * 1.先从页表中寻找，
+ *1.先从页表中寻找，
     1.1 找到的话立即返回
-    1.2 找不到的话从free_list或者lruplacer中获取page
+    1.2 找不到的话从free_list或者lru placer中获取page
   2.如果获取到的页面是dirty，将页面上的内容写回磁盘
   3.删除页表中旧的page_id和对应的页面，把新的page_id和对应的页面插入到页表中
   4.把磁盘上要求page_id的页面中的内容写到获取到的页面中
@@ -60,7 +60,7 @@ namespace cmudb {
             replacer_->Erase(tar);
             return tar;
         }
-        // 从free_list或lruplacer中获取空闲页面
+        // 从free_list或lru placer中获取空闲页面
         tar = GetVictimPage();
         if (tar == nullptr) return tar;
         if (tar->is_dirty_) {
