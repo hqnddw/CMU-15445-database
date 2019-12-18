@@ -271,6 +271,7 @@ namespace cmudb {
     INDEX_TEMPLATE_ARGUMENTS
     void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(
             BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager) {
+        //todo:第一个key不是无效的吗
         MappingType pair{KeyAt(0), ValueAt(0)};
         IncreaseSize(-1);
         memmove(array, array + 1,
