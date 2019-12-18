@@ -64,6 +64,7 @@ namespace cmudb {
         tar = GetVictimPage();
         if (tar == nullptr) return tar;
         if (tar->is_dirty_) {
+            //todo:理解这个条件
             if (ENABLE_LOGGING && log_manager_->GetPersistentLSN() < tar->GetLSN())
                 log_manager_->Flush(true);
             //2 将页面中的内容写回到磁盘
@@ -81,7 +82,9 @@ namespace cmudb {
         return tar;
     }
 
-    //Implementation of unpin page
+/**
+ * Implementation of unpin page
+ */
 /**
  * 1. 如果pin_count<=0, 返回false
  * 2. 如果pin_count>0, pin_count自减，把is_dirty设为给定的标志

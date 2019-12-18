@@ -28,43 +28,53 @@ namespace cmudb {
 
 #define MappingType std::pair<KeyType, ValueType>
 
-#define INDEX_TEMPLATE_ARGUMENTS                                               \
+#define INDEX_TEMPLATE_ARGUMENTS  \
   template <typename KeyType, typename ValueType, typename KeyComparator>
 
 // define page type enum
-enum class IndexPageType { INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE };
+    enum class IndexPageType {
+        INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE
+    };
 
 // Abstract class.
-class BPlusTreePage {
-public:
-  bool IsLeafPage() const;
-  bool IsRootPage() const;
-  void SetPageType(IndexPageType page_type);
+    class BPlusTreePage {
+    public:
+        bool IsLeafPage() const;
 
-  int GetSize() const;
-  void SetSize(int size);
-  void IncreaseSize(int amount);
+        bool IsRootPage() const;
 
-  int GetMaxSize() const;
-  void SetMaxSize(int max_size);
-  int GetMinSize() const;
+        void SetPageType(IndexPageType page_type);
 
-  page_id_t GetParentPageId() const;
-  void SetParentPageId(page_id_t parent_page_id);
+        int GetSize() const;
 
-  page_id_t GetPageId() const;
-  void SetPageId(page_id_t page_id);
+        void SetSize(int size);
 
-  void SetLSN(lsn_t lsn = INVALID_LSN);
+        void IncreaseSize(int amount);
 
-private:
-  // member variable, attributes that both internal and leaf page share
-  IndexPageType page_type_;
-  lsn_t lsn_;
-  int size_;
-  int max_size_;
-  page_id_t parent_page_id_;
-  page_id_t page_id_;
-};
+        int GetMaxSize() const;
+
+        void SetMaxSize(int max_size);
+
+        int GetMinSize() const;
+
+        page_id_t GetParentPageId() const;
+
+        void SetParentPageId(page_id_t parent_page_id);
+
+        page_id_t GetPageId() const;
+
+        void SetPageId(page_id_t page_id);
+
+        void SetLSN(lsn_t lsn = INVALID_LSN);
+
+    private:
+        // member variable, attributes that both internal and leaf page share
+        IndexPageType page_type_;
+        lsn_t lsn_;
+        int size_;
+        int max_size_;
+        page_id_t parent_page_id_;
+        page_id_t page_id_;
+    };
 
 } // namespace cmudb
