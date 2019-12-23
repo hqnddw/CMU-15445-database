@@ -355,7 +355,7 @@ namespace cmudb {
         // assumption neighbor_node is before node
         assert(node->GetSize() + neighbor_node->GetSize() <= node->GetMaxSize());
         // 把当前页所有的元素移动到兄弟页面中
-        node->(neighbor_node, index, buffer_pool_manager_);
+        node->MoveAllTo(neighbor_node,index,buffer_pool_manager_);
         transaction->AddIntoDeletedPageSet(node->GetPageId());
         parent->Remove(index);
         //parent page此时一定是内部页，而内部页的第一个键是无效的，所以当
