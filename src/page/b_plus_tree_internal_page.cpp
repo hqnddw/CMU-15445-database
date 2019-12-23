@@ -198,7 +198,7 @@ namespace cmudb {
         IncreaseSize(-1);
     }
 
-/**
+/*
  * Remove the only key & value pair in internal page and return the value
  * NOTE: only call this method within AdjustRoot()(in b_plus_tree.cpp)
  */
@@ -214,7 +214,7 @@ namespace cmudb {
  *****************************************************************************/
 /**
  * Remove all of key & value pairs from this page to "recipient" page, then
- * update relavent key & value pair in its parent page.
+ * update relevant key & value pair in its parent page.
  */
 /**
  * 当当前页面的size小于minSize时，将当前页面和兄弟页面进行合并
@@ -262,7 +262,7 @@ namespace cmudb {
  *****************************************************************************/
 /**
  * Remove the first key & value pair from this page to tail of "recipient"
- * page, then update relavent key & value pair in its parent page.
+ * page, then update relevant key & value pair in its parent page.
  */
 /**
  * 如果当前页面的size小于minSize，且右兄弟页面的size大于minSize时，
@@ -285,7 +285,7 @@ namespace cmudb {
         child->SetParentPageId(recipient->GetPageId());
         assert(child->GetParentPageId() == recipient->GetPageId());
         buffer_pool_manager->UnpinPage(child->GetPageId(), true);
-        // update relavent key & value pair in its parent page.
+        // update relevant key & value pair in its parent page.
         page = buffer_pool_manager->FetchPage(GetParentPageId());
         B_PLUS_TREE_INTERNAL_PAGE *parent =
                 reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(page->GetData());
@@ -303,7 +303,7 @@ namespace cmudb {
 
 /**
  * Remove the last key & value pair from this page to head of "recipient"
- * page, then update relavent key & value pair in its parent page.
+ * page, then update relevant key & value pair in its parent page.
  */
 /**
  * 如果当前页面的size小于minSize，且左兄弟页面的size大于minSize时，
@@ -387,7 +387,7 @@ namespace cmudb {
         return os.str();
     }
 
-// valuetype for internalNode should be page id_t
+// value type for internalNode should be page id_t
     template class BPlusTreeInternalPage<GenericKey<4>, page_id_t,
             GenericComparator<4>>;
     template class BPlusTreeInternalPage<GenericKey<8>, page_id_t,
