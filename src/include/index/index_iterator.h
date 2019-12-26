@@ -3,6 +3,7 @@
  * For range scan of b+ tree
  */
 #pragma once
+
 #include "page/b_plus_tree_leaf_page.h"
 
 namespace cmudb {
@@ -15,9 +16,10 @@ namespace cmudb {
     public:
         // you may define your own constructor based on your member variables
         IndexIterator(B_PLUS_TREE_LEAF_PAGE_TYPE *leaf, int index, BufferPoolManager *bufferPoolManager);
+
         ~IndexIterator();
 
-        bool isEnd(){
+        bool isEnd() {
             return (leaf_ == nullptr);
         }
 
@@ -50,6 +52,7 @@ namespace cmudb {
             bufferPoolManager_->UnpinPage(leaf_->GetPageId(), false);
             bufferPoolManager_->UnpinPage(leaf_->GetPageId(), false);
         }
+
         int index_;
         B_PLUS_TREE_LEAF_PAGE_TYPE *leaf_;
         BufferPoolManager *bufferPoolManager_;
