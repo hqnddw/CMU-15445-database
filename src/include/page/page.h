@@ -22,7 +22,7 @@ namespace cmudb {
     public:
         Page() { ResetMemory(); }
 
-        ~Page() {};
+        ~Page() = default;
 
         // get actual data page content
         inline char *GetData() { return data_; }

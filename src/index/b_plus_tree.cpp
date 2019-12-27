@@ -30,13 +30,13 @@ namespace cmudb {
         return root_page_id_ == INVALID_PAGE_ID;
     }
 
-    template <typename KeyType, typename ValueType, typename KeyComparator>
+    template<typename KeyType, typename ValueType, typename KeyComparator>
     thread_local int BPlusTree<KeyType, ValueType, KeyComparator>::rootLockedCnt =
             0;
 /*****************************************************************************
  * SEARCH
  *****************************************************************************/
-/*
+/**
  * 查找与key相对应的value值，如果value存在，将得到的值赋给value，返回true，否则返回false
  * 1.找到leaf page
  * 2.用leaf page中的Lookup方法，找到key对应的value，用leaf page中的Lookup方法
@@ -61,14 +61,7 @@ namespace cmudb {
  * INSERTION
  *****************************************************************************/
 /**
- * Insert constant key & value pair into b+ tree
- * if current tree is empty, start new tree, update root page id and insert
- * entry, otherwise insert into leaf page.
- * @return: since we only support unique key, if user try to insert duplicate
- * keys return false, otherwise return true.
- */
-/**
- * 首先判断树是不是空的，如果是空的，就创建一颗新树。如果不是就把值插到LEAFPAGE里。
+ * 首先判断树是不是空的，如果是空的，就创建一颗新树。如果不是就把值插到LEAF PAGE里。
  * 创建新树，就是开个NEW PAGE，随后把它的PAGE ID赋值给ROOT PAGE
  * ID，然后再把第一个KEY VALUE PAIR插入进去。
  * INSERT INTO LEAF PAGE，大概思路是先查找。值存在，就RETURN FALSE。
@@ -103,14 +96,11 @@ namespace cmudb {
         //1
         Page *rootPage = buffer_pool_manager_->NewPage(newPageId);
         assert(rootPage != nullptr);
-
         //2
-        B_PLUS_TREE_LEAF_PAGE_TYPE *root =
-                reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(rootPage->GetData());
+        auto *root = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(rootPage->GetData());
         root->Init(newPageId, INVALID_PAGE_ID);
         root_page_id_ = newPageId;
         UpdateRootPageId(true);
-
         //3
         root->Insert(key, value, comparator_);
         buffer_pool_manager_->UnpinPage(newPageId, true);
@@ -161,12 +151,12 @@ namespace cmudb {
  */
 /**
  * 拆分输入页面并返回新创建的页面，使用模板N表示内部页面或叶子页面
- * 1.用户先从buffer pool manager申请一个新页面
- * 2.把输入页面的一半元素移动到新创建的页面中，用到了MoveHalfTo方法
+ * 1.用户先从buffer pool manager申请一个新页面，新页面加上写锁，并把新页面加入到txn的page set中
+ * 2.新页面初始化，接着把输入页面的一半元素移动到新创建的页面中，用到了MoveHalfTo方法
  * 3.返回新页面
 */
     INDEX_TEMPLATE_ARGUMENTS
-    template <typename N>
+    template<typename N>
     N *BPLUSTREE_TYPE::Split(N *node, Transaction *transaction) {
         //1.
         page_id_t newPageId;
@@ -205,8 +195,7 @@ namespace cmudb {
             Page *const newPage = buffer_pool_manager_->NewPage(root_page_id_);
             assert(newPage != nullptr);
             assert(newPage->GetPinCount() == 1);
-            B_PLUS_TREE_INTERNAL_PAGE *newRoot =
-                    reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(newPage->GetData());
+            auto *newRoot = reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(newPage->GetData());
             newRoot->Init(root_page_id_);
             //填充新的root page
             newRoot->PopulateNewRoot(old_node->GetPageId(), key,
@@ -222,8 +211,7 @@ namespace cmudb {
         page_id_t parentId = old_node->GetParentPageId();
         auto *page = FetchPage(parentId);
         assert(page != nullptr);
-        B_PLUS_TREE_INTERNAL_PAGE *parent =
-                reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(page);
+        auto *parent = reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(page);
         new_node->SetParentPageId(parentId);
         //在parent page的末尾插入键值对
         parent->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
@@ -240,13 +228,12 @@ namespace cmudb {
 /*****************************************************************************
  * REMOVE
  *****************************************************************************/
-
 /**
  * 删除与输入key关联的键值对
  * 1.如果当前树为空，请立即返回，否则下一步
  * 2.首先找到正确的leaf page作为目标页，然后从leaf page中删除键值对
  *  （用到了leaf page中的RemoveAndDeleteRecord方法）
- * 3.如果当前页删除后的size小于minSize，则进行redistribute或merge
+ * 3.如果当前页删除后的size小于minSize，则进行redistribute或merge，否则释放txn中page set里的页面，结束
 */
     INDEX_TEMPLATE_ARGUMENTS
     void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
@@ -265,21 +252,16 @@ namespace cmudb {
         // assert(Check());
     }
 
-/*
- * User needs to first find the sibling of input page. If sibling's size + input
- * page's size > page's max size, then redistribute. Otherwise, merge.
- * Using template N to represent either internal page or leaf page.
- * @return: true means target leaf page should be deleted, false means no
- * deletion happens
- */
 /**
+ * template N 代表要么是internal page，要么是leaf page
  * 第一件如果来的是ROOT PAGE，要做ADJUST ROOT。
  * 如果不是，首要要找到这个PAGE的兄弟PAGE。
  * 然后按照兄弟PAGE和当前PAGE的位置关系，来做2个事情。第一个是当可以合并的时候，走Coalesce。
  * 如果不能合并，就意味着可以借节点。走Redistribute
+ * @return: true 意味着目标leaf page应该被删除, false则相反
 */
     INDEX_TEMPLATE_ARGUMENTS
-    template <typename N>
+    template<typename N>
 
     bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
         // if (N is the root and N has only one remaining child)
@@ -292,18 +274,16 @@ namespace cmudb {
             }
             return delOldRoot;
         }
-        // Let N2 be the previous or next child of parent(N)
         // 找当前页的前一页即左边的页，只有当当前页为首页时，才找右边的页
         N *node2;
         bool isRightSib = FindLeftSibling(node, node2, transaction);
         BPlusTreePage *parent = FetchPage(node->GetParentPageId());
-        B_PLUS_TREE_INTERNAL_PAGE *parentPage =
-                static_cast<B_PLUS_TREE_INTERNAL_PAGE *>(parent);
-        // if (entries in N and N2 can fit in a single node)
+        auto *parentPage = static_cast<B_PLUS_TREE_INTERNAL_PAGE *>(parent);
+        // 检查当前页面和兄弟页面能否合并
         if (node->GetSize() + node2->GetSize() <= node->GetMaxSize()) {
             if (isRightSib) {
                 swap(node, node2);
-            }  // assumption node is after node2
+            }
             // 合并时，要把两个合并页的共同父节点删除掉
             int removeIndex = parentPage->ValueIndex(node->GetPageId());
             Coalesce(node2, node, parentPage, removeIndex,
@@ -319,19 +299,18 @@ namespace cmudb {
     }
 
     INDEX_TEMPLATE_ARGUMENTS
-    template <typename N>
+    template<typename N>
     bool BPLUSTREE_TYPE::FindLeftSibling(N *node, N *&sibling,
                                          Transaction *transaction) {
         auto page = FetchPage(node->GetParentPageId());
-        B_PLUS_TREE_INTERNAL_PAGE *parent =
-                reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(page);
+        auto *parent = reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE *>(page);
         int index = parent->ValueIndex(node->GetPageId());
         int siblingIndex = index - 1;
         if (index == 0) {  // no left sibling
             siblingIndex = index + 1;
         }
-        //获取兄弟页
-        sibling = reinterpret_cast<N *>(CrabingProtocalFetchPage(
+        //利用蟹行协议获取兄弟页
+        sibling = reinterpret_cast<N *>(CrabbingProtocolFetchPage(
                 parent->ValueAt(siblingIndex), OpType::DELETE, -1, transaction));
         buffer_pool_manager_->UnpinPage(parent->GetPageId(), false);
         return index == 0;  // index == 0 意味着是右兄弟页面
@@ -347,15 +326,15 @@ namespace cmudb {
  * @return  true means parent node should be deleted, false means no deletion happend
  */
     INDEX_TEMPLATE_ARGUMENTS
-    template <typename N>
+    template<typename N>
     bool BPLUSTREE_TYPE::Coalesce(
             N *&neighbor_node, N *&node,
             BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *&parent,
             int index, Transaction *transaction) {
-        // assumption neighbor_node is before node
+        // 在这里，兄弟页面永远是左页面
         assert(node->GetSize() + neighbor_node->GetSize() <= node->GetMaxSize());
-        // 把当前页所有的元素移动到兄弟页面中
-        node->MoveAllTo(neighbor_node,index,buffer_pool_manager_);
+        node->MoveAllTo(neighbor_node, index, buffer_pool_manager_);
+        //把当前页面加入到被删除页面的set中
         transaction->AddIntoDeletedPageSet(node->GetPageId());
         parent->Remove(index);
         //parent page此时一定是内部页，而内部页的第一个键是无效的，所以当
@@ -376,7 +355,7 @@ namespace cmudb {
  * @param   node               input from method coalesceOrRedistribute()
  */
     INDEX_TEMPLATE_ARGUMENTS
-    template <typename N>
+    template<typename N>
     void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
         if (index == 0) {
             neighbor_node->MoveFirstToEndOf(node, buffer_pool_manager_);
@@ -420,7 +399,7 @@ namespace cmudb {
  * INDEX ITERATOR
  *****************************************************************************/
 /*
- * Input parameter is void, find the leaftmost leaf page first, then construct
+ * Input parameter is void, find the leftmost leaf page first, then construct
  * index iterator
  * @return : index iterator
  */
@@ -451,9 +430,10 @@ namespace cmudb {
 /*****************************************************************************
  * UTILITIES AND DEBUG
  *****************************************************************************/
-/*
+/**
  * Find leaf page containing particular key, if leftMost flag == true, find
  * the left most leaf page
+ * 找到leaf page后，同时会把leaf page加入到txn的page set中
  */
     INDEX_TEMPLATE_ARGUMENTS
     B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindLeafPage(
@@ -464,18 +444,16 @@ namespace cmudb {
             TryUnlockRootPageId(exclusive);
             return nullptr;
         }
-        //, you need to first fetch the page from buffer pool using its unique
-        // page_id, then reinterpret cast to either
-        // a leaf or an internal page, and unpin the page after any writing or
-        // reading operations.
-        auto pointer = CrabingProtocalFetchPage(root_page_id_, op, -1, transaction);
+        // you need to first fetch the page from buffer pool using its unique
+        // page_id, then reinterpret cast to either a leaf or an internal page,
+        // and unpin the page after any writing or reading operations.
+        auto pointer = CrabbingProtocolFetchPage(root_page_id_, op, -1, transaction);
         page_id_t next;
         // 找到leaf page
         for (page_id_t cur = root_page_id_; !pointer->IsLeafPage();
-             pointer = CrabingProtocalFetchPage(next, op, cur, transaction),
+             pointer = CrabbingProtocolFetchPage(next, op, cur, transaction),
                      cur = next) {
-            B_PLUS_TREE_INTERNAL_PAGE *internalPage =
-                    static_cast<B_PLUS_TREE_INTERNAL_PAGE *>(pointer);
+            auto *internalPage = static_cast<B_PLUS_TREE_INTERNAL_PAGE *>(pointer);
             // 在实现迭代器的时候，要最先定位到左边的节点
             if (leftMost) {
                 next = internalPage->ValueAt(0);
@@ -486,13 +464,15 @@ namespace cmudb {
         // 之后查找会用到此页面，所以此时不用取消页面固定
         return static_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(pointer);
     }
+
     INDEX_TEMPLATE_ARGUMENTS
     BPlusTreePage *BPLUSTREE_TYPE::FetchPage(page_id_t page_id) {
         auto page = buffer_pool_manager_->FetchPage(page_id);
         return reinterpret_cast<BPlusTreePage *>(page->GetData());
     }
+
     INDEX_TEMPLATE_ARGUMENTS
-    BPlusTreePage *BPLUSTREE_TYPE::CrabingProtocalFetchPage(
+    BPlusTreePage *BPLUSTREE_TYPE::CrabbingProtocolFetchPage(
             page_id_t page_id, OpType op, page_id_t previous,
             Transaction *transaction) {
         bool exclusive = op != OpType::READ;
@@ -531,7 +511,7 @@ namespace cmudb {
         transaction->GetPageSet()->clear();
     }
 
-/*
+/**
  * Update/Insert root page id in header page(where page_id = 0, header_page is
  * defined under include/page/header_page.h)
  * Call this method every time root page id is changed.
@@ -544,7 +524,7 @@ namespace cmudb {
 // updating it
     INDEX_TEMPLATE_ARGUMENTS
     void BPLUSTREE_TYPE::UpdateRootPageId(int insert_record) {
-        HeaderPage *header_page = static_cast<HeaderPage *>(
+        auto *header_page = static_cast<HeaderPage *>(
                 buffer_pool_manager_->FetchPage(HEADER_PAGE_ID));
         // header page 记录了tree的meta-data
         if (insert_record)
@@ -556,7 +536,7 @@ namespace cmudb {
         buffer_pool_manager_->UnpinPage(HEADER_PAGE_ID, true);
     }
 
-/*
+/**
  * This method is used for debug only
  * print out whole b+tree structure, rank by rank
  */
@@ -607,7 +587,7 @@ namespace cmudb {
         return tree.str();
     }
 
-/*
+/**
  * This method is used for test only
  * Read data from file and insert one by one
  */
@@ -625,7 +605,7 @@ namespace cmudb {
             Insert(index_key, rid, transaction);
         }
     }
-/*
+/**
  * This method is used for test only
  * Read data from file and remove one by one
  */
@@ -736,9 +716,18 @@ namespace cmudb {
         return isPageInOrderAndSizeCorr && isBal && isAllUnpin;
     }
 
-    template class BPlusTree<GenericKey<4>, RID, GenericComparator<4>>;
-    template class BPlusTree<GenericKey<8>, RID, GenericComparator<8>>;
-    template class BPlusTree<GenericKey<16>, RID, GenericComparator<16>>;
-    template class BPlusTree<GenericKey<32>, RID, GenericComparator<32>>;
-    template class BPlusTree<GenericKey<64>, RID, GenericComparator<64>>;
+    template
+    class BPlusTree<GenericKey<4>, RID, GenericComparator<4>>;
+
+    template
+    class BPlusTree<GenericKey<8>, RID, GenericComparator<8>>;
+
+    template
+    class BPlusTree<GenericKey<16>, RID, GenericComparator<16>>;
+
+    template
+    class BPlusTree<GenericKey<32>, RID, GenericComparator<32>>;
+
+    template
+    class BPlusTree<GenericKey<64>, RID, GenericComparator<64>>;
 }  // namespace cmudb

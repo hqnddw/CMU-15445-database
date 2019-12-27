@@ -43,12 +43,10 @@ namespace cmudb {
     INDEX_TEMPLATE_ARGUMENTS
     void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_page_id_ = next_page_id; }
 
-/**
- * Helper method to find the first index i so that array[i].first >= key
- * NOTE: This method is only used when generating index iterator
- */
+
 /**
  * 找到第一个符合array[i].first>=key条件的index值
+ * NOTE: This method is only used when generating index iterator
 */
     INDEX_TEMPLATE_ARGUMENTS
     int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(

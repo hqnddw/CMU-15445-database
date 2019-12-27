@@ -49,7 +49,7 @@ public:
 class Transaction {
 public:
   Transaction(Transaction const &) = delete;
-  Transaction(txn_id_t txn_id)
+  explicit Transaction(txn_id_t txn_id)
       : state_(TransactionState::GROWING),
         thread_id_(std::this_thread::get_id()),
         txn_id_(txn_id), prev_lsn_(INVALID_LSN), shared_lock_set_{new std::unordered_set<RID>},
@@ -60,7 +60,7 @@ public:
     deleted_page_set_.reset(new std::unordered_set<page_id_t>);
   }
 
-  ~Transaction() {}
+  ~Transaction() = default;
 
   //===--------------------------------------------------------------------===//
   // Mutators and Accessors
@@ -113,15 +113,15 @@ private:
   lsn_t prev_lsn_;
 
   // Below are used by concurrent index
-  // this deque contains page pointer that was latch during index operation
+  // 此deque包含在索引操作期间被锁存页面的指针
   std::shared_ptr<std::deque<Page *>> page_set_;
-  // this set contains page_id that was deleted during index operation
+  // 该set包含在索引操作期间删除的page_id
   std::shared_ptr<std::unordered_set<page_id_t>> deleted_page_set_;
 
   // Below are used by lock manager
-  // this set contains rid of shared-locked tuples by this transaction
+  // set包含了被该事务上了共享锁的元组的rid
   std::shared_ptr<std::unordered_set<RID>> shared_lock_set_;
-  // this set contains rid of exclusive-locked tuples by this transaction
+  // set包含了被该事务上了排他锁的元组的rid
   std::shared_ptr<std::unordered_set<RID>> exclusive_lock_set_;
 };
 } // namespace cmudb

@@ -182,11 +182,6 @@ namespace cmudb {
  * REMOVE
  *****************************************************************************/
 /**
- * Remove the key & value pair in internal page according to input index(a.k.a
- * array offset)
- * NOTE: store key&value pair continuously after deletion
- */
-/**
  * 删除指定index的键值对，从后先前移动数组，将index处的元素覆盖掉，并将当前页面的size减一
 */
     INDEX_TEMPLATE_ARGUMENTS
@@ -213,11 +208,7 @@ namespace cmudb {
  * MERGE
  *****************************************************************************/
 /**
- * Remove all of key & value pairs from this page to "recipient" page, then
- * update relevant key & value pair in its parent page.
- */
-/**
- * 当当前页面的size小于minSize时，将当前页面和兄弟页面进行合并
+ * 如果当前页面的size小于minSize时，将当前页面和兄弟页面进行合并
 */
     INDEX_TEMPLATE_ARGUMENTS
     void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(
@@ -261,10 +252,6 @@ namespace cmudb {
  * REDISTRIBUTE
  *****************************************************************************/
 /**
- * Remove the first key & value pair from this page to tail of "recipient"
- * page, then update relevant key & value pair in its parent page.
- */
-/**
  * 如果当前页面的size小于minSize，且右兄弟页面的size大于minSize时，
  * 从右兄弟页面借一个元素，即把右兄弟页面的第一个元素移动到当前页面的末尾
 */
@@ -301,10 +288,7 @@ namespace cmudb {
         IncreaseSize(1);
     }
 
-/**
- * Remove the last key & value pair from this page to head of "recipient"
- * page, then update relevant key & value pair in its parent page.
- */
+
 /**
  * 如果当前页面的size小于minSize，且左兄弟页面的size大于minSize时，
  * 从左兄弟页面借一个元素，即把左兄弟页面的最后一个元素移动到当前页面的头部
@@ -388,14 +372,23 @@ namespace cmudb {
     }
 
 // value type for internalNode should be page id_t
-    template class BPlusTreeInternalPage<GenericKey<4>, page_id_t,
+    template
+    class BPlusTreeInternalPage<GenericKey<4>, page_id_t,
             GenericComparator<4>>;
-    template class BPlusTreeInternalPage<GenericKey<8>, page_id_t,
+
+    template
+    class BPlusTreeInternalPage<GenericKey<8>, page_id_t,
             GenericComparator<8>>;
-    template class BPlusTreeInternalPage<GenericKey<16>, page_id_t,
+
+    template
+    class BPlusTreeInternalPage<GenericKey<16>, page_id_t,
             GenericComparator<16>>;
-    template class BPlusTreeInternalPage<GenericKey<32>, page_id_t,
+
+    template
+    class BPlusTreeInternalPage<GenericKey<32>, page_id_t,
             GenericComparator<32>>;
-    template class BPlusTreeInternalPage<GenericKey<64>, page_id_t,
+
+    template
+    class BPlusTreeInternalPage<GenericKey<64>, page_id_t,
             GenericComparator<64>>;
 }  // namespace cmudb

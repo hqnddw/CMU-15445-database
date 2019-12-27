@@ -98,7 +98,7 @@ namespace cmudb {
 
         void UpdateRootPageId(int insert_record = false);
 
-        BPlusTreePage *CrabingProtocalFetchPage(page_id_t page_id,OpType op, page_id_t previous, Transaction *transaction);
+        BPlusTreePage *CrabbingProtocolFetchPage(page_id_t page_id, OpType op, page_id_t previous, Transaction *transaction);
 
         void FreePagesInTransaction(bool exclusive,  Transaction *transaction, page_id_t cur = -1);
 
