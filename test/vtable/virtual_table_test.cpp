@@ -17,14 +17,15 @@ TEST(VtableTest, CreateTest) {
   rc = sqlite3_open(db_file.c_str(), &db);
   EXPECT_EQ(rc, SQLITE_OK);
 
-  rc = sqlite3_enable_load_extension(db, 1);
+  rc = sqlite3_db_config(db,SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,1,NULL);
   EXPECT_EQ(rc, SQLITE_OK);
 
   const char *zFile = "libvtable"; // shared library name
   const char *zProc = 0;           // entry point within library
-  char *zErrMsg = 0;
+  char *zErrMsg;
   rc = sqlite3_load_extension(db, zFile, zProc, &zErrMsg);
   EXPECT_EQ(rc, SQLITE_OK);
+  std::cout<<zErrMsg<<std::endl;
 
   EXPECT_TRUE(ExecSQL(
       db, "CREATE VIRTUAL TABLE foo1 USING vtable ('a INT, b "

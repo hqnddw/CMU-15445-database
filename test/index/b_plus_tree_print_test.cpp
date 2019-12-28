@@ -41,6 +41,7 @@ TEST(BptTreeTest, UnitTest) {
   bool verbose = false;
 
   std::cout << usageMessage();
+  //std::cout << "> ";
   // create KeyComparator and index schema
   std::string createStmt = "a bigint";
   Schema *key_schema = ParseCreateStatement(createStmt);
@@ -57,6 +58,7 @@ TEST(BptTreeTest, UnitTest) {
                                                            comparator);
   // create transaction
   Transaction *transaction = new Transaction(0);
+
   while (!quit) {
     std::cout << "> ";
     std::cin >> instruction;

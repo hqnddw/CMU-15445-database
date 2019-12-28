@@ -14,52 +14,52 @@
 
 namespace cmudb {
 
-class TableHeap {
-  friend class TableIterator;
+    class TableHeap {
+        friend class TableIterator;
 
-public:
-  ~TableHeap() {}
+    public:
+        ~TableHeap() {}
 
-  // open a table heap
-  TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_manager,
-            LogManager *log_manager, page_id_t first_page_id);
+        // open a table heap
+        TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_manager,
+                  LogManager *log_manager, page_id_t first_page_id);
 
-  // create table heap
-  TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_manager,
-            LogManager *log_manager, Transaction *txn);
+        // create table heap
+        TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_manager,
+                  LogManager *log_manager, Transaction *txn);
 
-  // for insert, if tuple is too large (>~page_size), return false
-  bool InsertTuple(const Tuple &tuple, RID &rid, Transaction *txn);
+        // for insert, if tuple is too large (>~page_size), return false
+        bool InsertTuple(const Tuple &tuple, RID &rid, Transaction *txn);
 
-  bool MarkDelete(const RID &rid, Transaction *txn); // for delete
+        bool MarkDelete(const RID &rid, Transaction *txn); // for delete
 
-  // if the new tuple is too large to fit in the old page, return false (will
-  // delete and insert)
-  bool UpdateTuple(const Tuple &tuple, const RID &rid, Transaction *txn);
+        // if the new tuple is too large to fit in the old page, return false (will
+        // delete and insert)
+        bool UpdateTuple(const Tuple &tuple, const RID &rid, Transaction *txn);
 
-  // commit/abort time
-  void ApplyDelete(const RID &rid,
-                   Transaction *txn); // when commit delete or rollback insert
-  void RollbackDelete(const RID &rid, Transaction *txn); // when rollback delete
+        // commit/abort time
+        void ApplyDelete(const RID &rid,
+                         Transaction *txn); // when commit delete or rollback insert
+        void RollbackDelete(const RID &rid, Transaction *txn); // when rollback delete
 
-  bool GetTuple(const RID &rid, Tuple &tuple, Transaction *txn);
+        bool GetTuple(const RID &rid, Tuple &tuple, Transaction *txn);
 
-  bool DeleteTableHeap();
+        bool DeleteTableHeap();
 
-  TableIterator begin(Transaction *txn);
+        TableIterator begin(Transaction *txn);
 
-  TableIterator end();
+        TableIterator end();
 
-  inline page_id_t GetFirstPageId() const { return first_page_id_; }
+        inline page_id_t GetFirstPageId() const { return first_page_id_; }
 
-private:
-  /**
-   * Members
-   */
-  BufferPoolManager *buffer_pool_manager_;
-  LockManager *lock_manager_;
-  LogManager *log_manager_;
-  page_id_t first_page_id_;
-};
+    private:
+        /**
+         * Members
+         */
+        BufferPoolManager *buffer_pool_manager_;
+        LockManager *lock_manager_;
+        LogManager *log_manager_;
+        page_id_t first_page_id_;
+    };
 
 } // namespace cmudb

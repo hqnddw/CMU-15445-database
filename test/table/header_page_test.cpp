@@ -23,36 +23,31 @@ TEST(HeaderPageTest, UnitTest) {
     std::string name = std::to_string(i);
     EXPECT_EQ(page->InsertRecord(name, i), true);
   }
-
   for (int i = 27; i >= 1; i--) {
     std::string name = std::to_string(i);
     page_id_t root_id;
     EXPECT_EQ(page->GetRootId(name, root_id), true);
     // std::cout << "root page id is " << root_id << '\n';
   }
-
   for (int i = 1; i < 28; i++) {
     std::string name = std::to_string(i);
     EXPECT_EQ(page->UpdateRecord(name, i + 10), true);
   }
-
   for (int i = 27; i >= 1; i--) {
     std::string name = std::to_string(i);
     page_id_t root_id;
     EXPECT_EQ(page->GetRootId(name, root_id), true);
     // std::cout << "root page id is " << root_id << '\n';
   }
-
   for (int i = 1; i < 28; i++) {
     std::string name = std::to_string(i);
     EXPECT_EQ(page->DeleteRecord(name), true);
   }
-
   EXPECT_EQ(page->GetRecordCount(), 0);
-
-  delete buffer_pool_manager;
+  
   delete disk_manager;
   remove("test.db");
   remove("test.log");
+
 }
 } // namespace cmudb
