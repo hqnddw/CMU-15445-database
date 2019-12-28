@@ -50,7 +50,7 @@ foreach(test_src ${test_srcs} )
     string(REPLACE "\"" "" test_name ${test_bare_name_without_extension})
 
     # create executable
-    add_executable(${test_name} EXCLUDE_FROM_ALL ${test_src})
+    add_executable(${test_name} EXCLUDE_FROM_ALL ${test_src} )
     add_dependencies(check ${test_name})
 
     # link libraries

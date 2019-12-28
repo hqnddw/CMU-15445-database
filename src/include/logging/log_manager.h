@@ -57,8 +57,9 @@ namespace cmudb {
         std::atomic<lsn_t> next_lsn_;
         // log records before & include persistent_lsn_ have been written to disk
         std::atomic<lsn_t> persistent_lsn_;
-        // log buffer related
+        // log_buffer_ for concurrently appending log records
         char *log_buffer_;
+        // flush_buffer_ for flushing
         char *flush_buffer_;
         // latch to protect shared member variables
         std::mutex latch_;
