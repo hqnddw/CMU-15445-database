@@ -152,7 +152,7 @@ namespace cmudb {
         }
 
     private:
-        // 五个一定要有的公共字段
+        // 四种操作类型一定要有的公共字段header
         // the length of log record(for serialization, in bytes)
         int32_t size_ = 0;
         // must have fields
@@ -161,20 +161,20 @@ namespace cmudb {
         lsn_t prev_lsn_ = INVALID_LSN;
         LogRecordType log_record_type_ = LogRecordType::INVALID;
 
-        // case1: for delete opeartion, delete_tuple_ for UNDO opeartion
+        // case1: for delete operation, delete_tuple_ for UNDO operation
         RID delete_rid_;
         Tuple delete_tuple_;
 
-        // case2: for insert opeartion
+        // case2: for insert operation
         RID insert_rid_;
         Tuple insert_tuple_;
 
-        // case3: for update opeartion
+        // case3: for update operation
         RID update_rid_;
         Tuple old_tuple_;
         Tuple new_tuple_;
 
-        // case4: for new page opeartion
+        // case4: for new page operation
         page_id_t prev_page_id_ = INVALID_PAGE_ID;
         page_id_t page_id_ = INVALID_PAGE_ID;
         const static int HEADER_SIZE = 20;

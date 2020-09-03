@@ -55,6 +55,7 @@ namespace cmudb {
  */
     template <typename K, typename V>
     bool ExtendibleHash<K, V>::Find(const K &key, V &value) {
+        //https://en.cppreference.com/w/cpp/thread/mutex
         std::lock_guard<std::mutex> guard(mutex);
 
         auto index = getBucketIndex(key);
@@ -102,10 +103,8 @@ namespace cmudb {
         std::shared_ptr<Bucket> targetBucket = bucketTable[index];
 
         while (targetBucket->items.size() == bucketMaxSize) {
-            //当目标桶满了且localDepth==globalDepth时
             if (targetBucket->localDepth == globalDepth) {
                 size_t length = bucketTable.size();
-                // 扩充 bucketTable中桶的数量
                 for (size_t i = 0; i < length; i++) {
                     bucketTable.push_back(bucketTable[i]);
                 }
@@ -115,7 +114,6 @@ namespace cmudb {
             numBuckets++;
             auto zeroBucket = std::make_shared<Bucket>(targetBucket->localDepth + 1);
             auto oneBucket = std::make_shared<Bucket>(targetBucket->localDepth + 1);
-            // 把目标桶中的元素分散到oneBucket和zeroBucket中
             for (auto item : targetBucket->items) {
                 size_t hashkey = HashKey(item.first);
                 if (hashkey & mask) {
@@ -126,7 +124,6 @@ namespace cmudb {
             }
 
             for (size_t i = 0; i < bucketTable.size(); i++) {
-                //把oneBucket和zeroBucket挂载到bucketTable中
                 if (bucketTable[i] == targetBucket) {
                     if (i & mask) {
                         bucketTable[i] = oneBucket;
@@ -135,6 +132,7 @@ namespace cmudb {
                     }
                 }
             }
+
             index = getBucketIndex(key);
             targetBucket = bucketTable[index];
         } //end while

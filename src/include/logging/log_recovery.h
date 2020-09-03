@@ -34,13 +34,12 @@ namespace cmudb {
         bool DeserializeLogRecord(const char *data, LogRecord &log_record);
 
     private:
-        // TODO: you can add whatever member variable here
         // Don't forget to initialize newly added variable in constructor
         DiskManager *disk_manager_;
         BufferPoolManager *buffer_pool_manager_;
-        // maintain active transactions and its corresponds latest lsn
+        //维护活跃的事务及其对应的最新lsn
         std::unordered_map<txn_id_t, lsn_t> active_txn_;
-        // mapping log sequence number to log file offset, for undo purpose
+        //将日志序列号映射到日志文件偏移量，以供撤消
         std::unordered_map<lsn_t, int> lsn_mapping_;
         // log buffer related
         int offset_;

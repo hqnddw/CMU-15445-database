@@ -44,10 +44,7 @@ public:
   }
 
   bool operator==(const RID &other) const {
-    if ((page_id_ == other.page_id_) && (slot_num_ == other.slot_num_))
-      return true;
-    else
-      return false;
+      return (page_id_ == other.page_id_) && (slot_num_ == other.slot_num_);
   }
 
 private:

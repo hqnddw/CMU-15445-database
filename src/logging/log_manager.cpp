@@ -23,11 +23,12 @@ void LogManager::RunFlushThread() {
      */
     if (ENABLE_LOGGING) return;
     ENABLE_LOGGING = true;
-    // 您需要启动一个单独的后台线程负责将日志刷新到磁盘文件中
+    // 需要启动一个单独的后台线程负责将日志刷新到磁盘文件中
     flush_thread_ = new thread([&] {
         // 线程触发每LOG_TIMEOUT秒或者log_buffer已满
         while (ENABLE_LOGGING) {
             unique_lock<mutex> latch(latch_);
+            //超时时触发
             cv_.wait_for(latch, LOG_TIMEOUT, [&] { return needFlush_.load(); });
             assert(flushBufferSize_ == 0);
             if (logBufferOffset_ > 0) {
@@ -84,26 +85,31 @@ lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
         });
     }
     log_record.lsn_ = next_lsn_++;
+    //header是公共字段，可以提前加上
     memcpy(log_buffer_ + logBufferOffset_, &log_record, LogRecord::HEADER_SIZE);
     int pos = logBufferOffset_ + LogRecord::HEADER_SIZE;
 
+    //插入时
     if (log_record.log_record_type_ == LogRecordType::INSERT) {
         memcpy(log_buffer_ + pos, &log_record.insert_rid_, sizeof(RID));
         pos += sizeof(RID);
         // we have provided serialize function for tuple class
         log_record.insert_tuple_.SerializeTo(log_buffer_ + pos);
+        //删除时
     } else if (log_record.log_record_type_ == LogRecordType::MARKDELETE ||
                log_record.log_record_type_ == LogRecordType::APPLYDELETE ||
                log_record.log_record_type_ == LogRecordType::ROLLBACKDELETE) {
         memcpy(log_buffer_ + pos, &log_record.delete_rid_, sizeof(RID));
         pos += sizeof(RID);
         log_record.delete_tuple_.SerializeTo(log_buffer_ + pos);
+        //更新时
     } else if (log_record.log_record_type_ == LogRecordType::UPDATE) {
         memcpy(log_buffer_ + pos, &log_record.update_rid_, sizeof(RID));
         pos += sizeof(RID);
         log_record.old_tuple_.SerializeTo(log_buffer_ + pos);
         pos += log_record.old_tuple_.GetLength() + sizeof(int32_t);
         log_record.new_tuple_.SerializeTo(log_buffer_ + pos);
+        //新开一个页面时
     } else if (log_record.log_record_type_ == LogRecordType::NEWPAGE) {
         // prev_page_id
         memcpy(log_buffer_ + pos, &log_record.prev_page_id_, sizeof(page_id_t));
