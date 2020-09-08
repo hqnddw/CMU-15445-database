@@ -25,6 +25,7 @@
  *-------------------------------------------------------------
  */
 #pragma once
+
 #include <cassert>
 
 #include "common/config.h"
@@ -43,11 +44,12 @@ namespace cmudb {
         COMMIT,
         ABORT,
         // when create a new page in heap table
-                NEWPAGE,
+        NEWPAGE,
     };
 
     class LogRecord {
         friend class LogManager;
+
         friend class LogRecovery;
 
     public:
@@ -146,7 +148,7 @@ namespace cmudb {
                << "LSN:" << lsn_ << ", "
                << "transID:" << txn_id_ << ", "
                << "prevLSN:" << prev_lsn_ << ", "
-               << "LogType:" << (int)log_record_type_ << "]";
+               << "LogType:" << (int) log_record_type_ << "]";
 
             return os.str();
         }

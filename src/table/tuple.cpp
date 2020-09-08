@@ -120,11 +120,14 @@ std::string Tuple::ToString(Schema *schema) const {
   return os.str();
 }
 
+//数据序列化就是将对象或者数据结构转化成特定的格式，使其可在网络中传输，或者可存储在内存或者文件中
+//tuple序列化格式: size+data
 void Tuple::SerializeTo(char *storage) const {
   memcpy(storage, &size_, sizeof(int32_t));
   memcpy(storage + sizeof(int32_t), data_, size_);
 }
 
+//反序列化则是相反的操作，将对象从序列化数据中还原出来。
 void Tuple::DeserializeFrom(const char *storage) {
   uint32_t size = *reinterpret_cast<const int32_t *>(storage);
   // construct a tuple
